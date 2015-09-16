@@ -68,6 +68,7 @@ End Sub
 """
 from pandas import DataFrame
 import ipdb
+from amortization import Loan
 
 def forecast_loss_rates_from_bad_rates(bad_rate_csv, term, avg_interest_rate=.14, avg_loan_size=185000, recovery_rate=0.1, periods_per_year=24):
 	# read bad rates
