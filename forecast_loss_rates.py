@@ -66,11 +66,14 @@ Sub calculate_dollar_loss()
 End Sub
 
 """
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import ipdb
 from amortization import Loan
 
 def forecast_loss_rates_from_bad_rates(bad_rate_csv, term, avg_interest_rate=.14, avg_loan_size=185000, recovery_rate=0.1, periods_per_year=24):
+	"""
+		Given an input of a csv of a smoothed bad rate table, spits out forecasted loss rate table in a csv
+	"""
 	# read bad rates
 	bad_rate_df = DataFrame.from_csv(bad_rate_csv)
 
@@ -86,3 +89,17 @@ def forecast_loss_rates_from_bad_rates(bad_rate_csv, term, avg_interest_rate=.14
 			# multiply by this period's bad rate
 			# multiply by (1-recovery rate)
 			# result represents principal lost this period, add it to the counter
+
+def get_amortized_balance_curve(interest_rate, term, periods_per_year):
+	"""
+		Return a Series of remaining balance at each period in time for a fully amortized loan with the inputs.
+	"""
+	loan = Loan(interest_rate/periods_per_year, term*periods_per_year, 1)
+	balance_curve = {}
+	period_count = 1
+	for period in loan.schedule():
+		balance = period.balance
+		balance_curve[period_count] = balance
+		period_count += 1
+	balance_curve = Series(balance_curve)
+	return balance_curve
