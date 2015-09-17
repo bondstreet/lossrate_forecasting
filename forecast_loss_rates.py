@@ -69,6 +69,7 @@ End Sub
 from pandas import DataFrame, Series
 import ipdb
 from amortization import Loan
+from os import listdir
 
 # annual incidence curves tell you b/w time t and t-1, what proportion of the bad portfolio goes bad
 ANNUAL_INCIDENCE_CURVES = {
@@ -77,8 +78,8 @@ ANNUAL_INCIDENCE_CURVES = {
 	1:Series([1.0], index=[1])
 }
 
-BADRATE_DIR = 'badrate_tables'
-LOSSRATE_DIR = 'lossrate_tables'
+BADRATE_DIR = 'badrate_tables/'
+LOSSRATE_DIR = 'lossrate_tables/'
 
 def get_amortized_balance_curve(interest_rate, term, periods_per_year):
 	"""
@@ -155,4 +156,28 @@ def forecast_loss_rates_from_bad_rates(bad_rate_csv, term, avg_interest_rate=.14
 		data[col] = new_row
 	return DataFrame(data).reindex(columns=orig_cols, index=orig_rows)
 
+def find_csv_filenames( path_to_dir, suffix=".csv" ):
+    filenames = listdir(path_to_dir)
+    return [ filename for filename in filenames if filename.endswith( suffix ) ]
 
+def _extract_term_from_filename(filename):
+	# assuming term is a number, and filename is _ delimited
+	tokens = filename.split('_')
+	for token in tokens:
+		try:
+			term = int(token)
+			return term
+		except:
+			continue
+	return None
+
+def batch_forecast_loss_rates():
+	csvs_names = find_csv_filenames(BADRATE_DIR)
+	if len(csvs_names) != 12:
+		print 'WARNING: only found %s bad rate tables, not 12' % (len(csvs_names))
+	for csv_name in csvs_names:
+		term = _extract_term_from_filename(csv_name)
+		lossrate_df = forecast_loss_rates_from_bad_rates('%s%s' % (BADRATE_DIR, csv_name), term)
+		new_csv_name = csv_name.replace('badrates', 'lossrates')
+		lossrate_df.to_csv('%s%s' % (LOSSRATE_DIR, new_csv_name))
+		print 'forecasted loss rates for csv %s' % csv_name
